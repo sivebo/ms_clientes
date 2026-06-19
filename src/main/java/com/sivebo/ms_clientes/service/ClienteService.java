@@ -1,111 +1,85 @@
 package com.sivebo.ms_clientes.service;
 
-import com.sivebo.ms_clientes.dto.ClienteRequest;
-import com.sivebo.ms_clientes.dto.ClienteResponse;
+import java.util.Optional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import com.sivebo.ms_clientes.dto.request.ClienteContactoUpdateDTO;
+import com.sivebo.ms_clientes.dto.request.ClienteRequestDTO;
+import com.sivebo.ms_clientes.dto.response.ClienteResponseDTO;
+import com.sivebo.ms_clientes.exception.DuplicateResourceException;
+import com.sivebo.ms_clientes.exception.EntityNotFoundException;
 import com.sivebo.ms_clientes.model.Cliente;
+import com.sivebo.ms_clientes.model.TipoDocumento;
 import com.sivebo.ms_clientes.repository.ClienteRepository;
+import com.sivebo.ms_clientes.repository.TipoDocumentoRepository;
+import com.sivebo.ms_clientes.utils.MapToDTO;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ClienteService {
+public class ClienteService extends MapToDTO {
 
-    private final ClienteRepository clienteRepository;
+        private final ClienteRepository clienteRepository;
+        private final TipoDocumentoRepository tipoDocumentoRepository;
 
-    @Transactional
-    public ClienteResponse crear(ClienteRequest request) {
-        log.info("[ms_clientes] Creando cliente con RUT={}", request.getRut());
-        if (clienteRepository.existsByRut(request.getRut())) {
-            log.warn("[ms_clientes] RUT ya registrado: {}", request.getRut());
-            throw new RuntimeException("Ya existe un cliente con el RUT: " + request.getRut());
+        // RF-10: registrar cliente remitente/destinatario
+        public ClienteResponseDTO create(ClienteRequestDTO dto) {
+                if (clienteRepository.existsByNroDocumento(dto.getNroDocumento())) {
+                        throw new DuplicateResourceException(
+                                        "Ya existe un cliente con el número de documento: " + dto.getNroDocumento());
+                }
+
+                TipoDocumento tipoDocumento = tipoDocumentoRepository.findByCodigo(dto.getCodigoTipoDocumento())
+                                .orElseThrow(() -> new EntityNotFoundException(
+                                                "Tipo de documento no encontrado: " + dto.getCodigoTipoDocumento()));
+
+                Cliente cliente = new Cliente(
+                                null,
+                                tipoDocumento,
+                                dto.getNroDocumento(),
+                                dto.getNombre(),
+                                dto.getApellido(),
+                                dto.getEmail(),
+                                dto.getTelefono());
+
+                log.info(">>> Cliente creado: {} {} ({})", dto.getNombre(), dto.getApellido(), dto.getNroDocumento());
+                return mapClienteToDTO(clienteRepository.save(cliente));
         }
-        if (request.getEmail() != null && !request.getEmail().isBlank()
-                && clienteRepository.existsByEmail(request.getEmail())) {
-            log.warn("[ms_clientes] Email ya registrado: {}", request.getEmail());
-            throw new RuntimeException("Ya existe un cliente con el email: " + request.getEmail());
+
+        // RF-11: buscar cliente existente por tipo y número de documento
+        public Optional<ClienteResponseDTO> getByTipoYNumeroDocumento(String codigoTipoDoc, String nroDocumento) {
+                log.info(">>> Buscando cliente por tipoDocumento={}, nroDocumento={}", codigoTipoDoc, nroDocumento);
+                return clienteRepository
+                                .findByTipoDocumentoCodigoAndNroDocumento(codigoTipoDoc, nroDocumento)
+                                .map(this::mapClienteToDTO);
         }
-        ClienteResponse response = toResponse(clienteRepository.save(Cliente.builder()
-                .nombre(request.getNombre())
-                .rut(request.getRut())
-                .telefono(request.getTelefono())
-                .email(request.getEmail())
-                .build()));
-        log.info("[ms_clientes] Cliente creado exitosamente id={}", response.getId());
-        return response;
-    }
 
-    @Transactional(readOnly = true)
-    public List<ClienteResponse> listar() {
-        log.info("[ms_clientes] Listando todos los clientes");
-        List<ClienteResponse> lista = clienteRepository.findAll().stream()
-                .map(this::toResponse).collect(Collectors.toList());
-        log.info("[ms_clientes] Total clientes: {}", lista.size());
-        return lista;
-    }
+        public Optional<ClienteResponseDTO> getById(Long id) {
+                return clienteRepository.findById(id).map(this::mapClienteToDTO);
+        }
 
-    @Transactional(readOnly = true)
-    public ClienteResponse buscarPorId(Long id) {
-        log.info("[ms_clientes] Buscando cliente id={}", id);
-        return toResponse(clienteRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("[ms_clientes] Cliente no encontrado id={}", id);
-                    return new RuntimeException("Cliente no encontrado con ID: " + id);
-                }));
-    }
-
-    @Transactional(readOnly = true)
-    public List<ClienteResponse> buscarPorNombre(String nombre) {
-        log.info("[ms_clientes] Buscando clientes por nombre: {}", nombre);
-        return clienteRepository.findByNombreContainingIgnoreCase(nombre).stream()
-                .map(this::toResponse).collect(Collectors.toList());
-    }
-
-    @Transactional
-    public ClienteResponse actualizar(Long id, ClienteRequest request) {
-        log.info("[ms_clientes] Actualizando cliente id={}", id);
-        Cliente cliente = clienteRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("[ms_clientes] Cliente no encontrado para actualizar id={}", id);
-                    return new RuntimeException("Cliente no encontrado con ID: " + id);
+        // RF-12: actualizar datos de contacto (email, telefono)
+        public Optional<ClienteResponseDTO> actualizarContacto(Long id, ClienteContactoUpdateDTO dto) {
+                return clienteRepository.findById(id).map(cliente -> {
+                        cliente.setEmail(dto.getEmail());
+                        cliente.setTelefono(dto.getTelefono());
+                        log.info(">>> Datos de contacto actualizados para cliente id={}", id);
+                        return mapClienteToDTO(clienteRepository.save(cliente));
                 });
-        if (!cliente.getRut().equals(request.getRut())
-                && clienteRepository.existsByRut(request.getRut())) {
-            log.warn("[ms_clientes] RUT ya en uso: {}", request.getRut());
-            throw new RuntimeException("El RUT ya está en uso: " + request.getRut());
         }
-        cliente.setNombre(request.getNombre());
-        cliente.setRut(request.getRut());
-        cliente.setTelefono(request.getTelefono());
-        cliente.setEmail(request.getEmail());
-        log.info("[ms_clientes] Cliente actualizado exitosamente id={}", id);
-        return toResponse(clienteRepository.save(cliente));
-    }
 
-    @Transactional
-    public void eliminar(Long id) {
-        log.info("[ms_clientes] Eliminando cliente id={}", id);
-        if (!clienteRepository.existsById(id)) {
-            log.warn("[ms_clientes] Cliente no encontrado para eliminar id={}", id);
-            throw new RuntimeException("Cliente no encontrado con ID: " + id);
+        // RF-13: listar clientes con paginación y filtro por nombre o numero de documento
+        public Page<ClienteResponseDTO> listar(String filtro, Pageable pageable) {
+                Page<Cliente> page = (filtro != null && !filtro.isBlank())
+                                ? clienteRepository.findByNombreContainingIgnoreCaseOrNroDocumentoContainingIgnoreCase(
+                                                filtro, filtro, pageable)
+                                : clienteRepository.findAll(pageable);
+                return page.map(this::mapClienteToDTO);
         }
-        clienteRepository.deleteById(id);
-        log.info("[ms_clientes] Cliente eliminado id={}", id);
-    }
-
-    private ClienteResponse toResponse(Cliente c) {
-        return ClienteResponse.builder()
-                .id(c.getId())
-                .nombre(c.getNombre())
-                .rut(c.getRut())
-                .telefono(c.getTelefono())
-                .email(c.getEmail())
-                .build();
-    }
 }

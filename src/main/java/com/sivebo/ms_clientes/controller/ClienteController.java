@@ -1,49 +1,89 @@
 package com.sivebo.ms_clientes.controller;
 
-import com.sivebo.ms_clientes.dto.ClienteRequest;
-import com.sivebo.ms_clientes.dto.ClienteResponse;
-import com.sivebo.ms_clientes.service.ClienteService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import java.util.List;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
+import com.sivebo.ms_clientes.dto.request.ClienteContactoUpdateDTO;
+import com.sivebo.ms_clientes.dto.request.ClienteRequestDTO;
+import com.sivebo.ms_clientes.dto.response.ClienteResponseDTO;
+import com.sivebo.ms_clientes.service.ClienteService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RestController
-@RequestMapping("/clientes")
+@RequestMapping("api/v1/clientes")
 @RequiredArgsConstructor
+@Tag(name = "Clientes", description = "Operaciones relacionadas con clientes (remitentes y destinatarios)")
 public class ClienteController {
 
-    private final ClienteService clienteService;
+        private final ClienteService clienteService;
 
-    @PostMapping
-    public ResponseEntity<ClienteResponse> crear(@Valid @RequestBody ClienteRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(clienteService.crear(request));
-    }
+        @Operation(summary = "Registrar un nuevo cliente", description = "RF-10: crea un cliente remitente o destinatario")
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "201", description = "Cliente creado exitosamente", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ClienteResponseDTO.class)))
+        })
+        @PostMapping
+        public ResponseEntity<ClienteResponseDTO> create(@Valid @RequestBody ClienteRequestDTO dto) {
+                log.info(">>> POST /api/v1/clientes - nroDocumento: {}", dto.getNroDocumento());
+                return ResponseEntity.status(HttpStatus.CREATED).body(clienteService.create(dto));
+        }
 
-    @GetMapping
-    public ResponseEntity<List<ClienteResponse>> listar(
-            @RequestParam(required = false) String nombre) {
-        if (nombre != null && !nombre.isBlank())
-            return ResponseEntity.ok(clienteService.buscarPorNombre(nombre));
-        return ResponseEntity.ok(clienteService.listar());
-    }
+        @Operation(summary = "Buscar cliente por tipo y número de documento", description = "RF-11: búsqueda exacta por tipoDocumento + nroDocumento")
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Cliente encontrado"),
+                        @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
+        })
+        @GetMapping("/buscar")
+        public ResponseEntity<ClienteResponseDTO> buscarPorDocumento(
+                        @RequestParam String tipoDocumento,
+                        @RequestParam String nroDocumento) {
+                return clienteService.getByTipoYNumeroDocumento(tipoDocumento, nroDocumento)
+                                .map(ResponseEntity::ok)
+                                .orElse(ResponseEntity.notFound().build());
+        }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ClienteResponse> buscarPorId(@PathVariable Long id) {
-        return ResponseEntity.ok(clienteService.buscarPorId(id));
-    }
+        @Operation(summary = "Obtener cliente por id")
+        @GetMapping("/{id}")
+        public ResponseEntity<ClienteResponseDTO> getById(@PathVariable Long id) {
+                return clienteService.getById(id)
+                                .map(ResponseEntity::ok)
+                                .orElse(ResponseEntity.notFound().build());
+        }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ClienteResponse> actualizar(@PathVariable Long id,
-            @Valid @RequestBody ClienteRequest request) {
-        return ResponseEntity.ok(clienteService.actualizar(id, request));
-    }
+        @Operation(summary = "Listar clientes paginados", description = "RF-13: lista con paginación y filtro opcional por nombre o número de documento. Ej: ?filtro=Juan&page=0&size=10")
+        @GetMapping
+        public ResponseEntity<Page<ClienteResponseDTO>> listar(
+                        @RequestParam(required = false) String filtro,
+                        Pageable pageable) {
+                return ResponseEntity.ok(clienteService.listar(filtro, pageable));
+        }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        clienteService.eliminar(id);
-        return ResponseEntity.noContent().build();
-    }
+        @Operation(summary = "Actualizar datos de contacto", description = "RF-12: actualiza solo email y teléfono del cliente")
+        @PutMapping("/{id}/contacto")
+        public ResponseEntity<ClienteResponseDTO> actualizarContacto(
+                        @PathVariable Long id,
+                        @Valid @RequestBody ClienteContactoUpdateDTO dto) {
+                return clienteService.actualizarContacto(id, dto)
+                                .map(ResponseEntity::ok)
+                                .orElse(ResponseEntity.notFound().build());
+        }
 }
