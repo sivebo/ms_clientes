@@ -1,13 +1,19 @@
 package com.sivebo.ms_clientes.repository;
 
-import com.sivebo.ms_clientes.model.Cliente;
-import org.springframework.data.jpa.repository.JpaRepository;
-import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.sivebo.ms_clientes.model.Cliente;
+
 public interface ClienteRepository extends JpaRepository<Cliente, Long> {
-    Optional<Cliente> findByRut(String rut);
-    boolean existsByRut(String rut);
-    boolean existsByEmail(String email);
-    List<Cliente> findByNombreContainingIgnoreCase(String nombre);
+
+        Optional<Cliente> findByTipoDocumentoCodigoAndNroDocumento(String codigoTipoDoc, String nroDocumento);
+
+        Boolean existsByNroDocumento(String nroDocumento);
+
+        Page<Cliente> findByNombreContainingIgnoreCaseOrNroDocumentoContainingIgnoreCase(
+                        String nombre, String nroDocumento, Pageable pageable);
 }
