@@ -19,7 +19,7 @@ spring:
           sql: true
 
 server:
-  port: ${SERVER_PORT:8085}
+  port: ${SERVER_PORT:8009}
 
 springdoc:
   api-docs:
