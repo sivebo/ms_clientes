@@ -1,0 +1,139 @@
+{
+  "info": {
+    "name": "ms_clientes",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "SIVEBO ms_clientes — todos los endpoints, enrutados a través de API gateway ({{baseUrl}}). codigoTipoDocumento debe ser un código real de GET /tipos-documento."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "idCliente", "value": "1" },
+    { "key": "codigoTipoDocumento", "value": "RUT" }
+  ],
+  "item": [
+    {
+      "name": "TipoDocumentoController",
+      "item": [
+        {
+          "name": "Listar tipos documento",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/tipos-documento", "host": ["{{baseUrl}}"], "path": ["api","v1","tipos-documento"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test(\"status ok\", function () { pm.expect(pm.response.code).to.be.oneOf([200]); });" ] } }
+          ]
+        },
+        {
+          "name": "Obtener tipo documento por codigo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/tipos-documento/{{codigoTipoDocumento}}", "host": ["{{baseUrl}}"], "path": ["api","v1","tipos-documento","{{codigoTipoDocumento}}"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test(\"status ok\", function () { pm.expect(pm.response.code).to.be.oneOf([200]); });" ] } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ClienteController",
+      "item": [
+        {
+          "name": "Crear cliente",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigoTipoDocumento\": \"RUT\",\n  \"nroDocumento\": \"11111111-1\",\n  \"nombre\": \"Juan\",\n  \"apellido\": \"Perez\",\n  \"email\": \"juan.perez@correo.cl\",\n  \"telefono\": \"+56912345678\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/clientes", "host": ["{{baseUrl}}"], "path": ["api","v1","clientes"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var j;",
+                  "try { j = pm.response.json(); } catch (e) { j = null; }",
+                  "if (j && j.id !== undefined && j.id !== null) pm.collectionVariables.set(\"idCliente\", j.id);",
+                  "pm.test(\"status ok\", function () { pm.expect(pm.response.code).to.be.oneOf([200,201]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Buscar cliente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes/buscar?tipoDocumento=RUT&nroDocumento=11111111-1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","v1","clientes","buscar"],
+              "query": [
+                { "key": "tipoDocumento", "value": "RUT" },
+                { "key": "nroDocumento", "value": "11111111-1" }
+              ]
+            }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test(\"status ok\", function () { pm.expect(pm.response.code).to.be.oneOf([200]); });" ] } }
+          ]
+        },
+        {
+          "name": "Obtener cliente por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/clientes/{{idCliente}}", "host": ["{{baseUrl}}"], "path": ["api","v1","clientes","{{idCliente}}"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test(\"status ok\", function () { pm.expect(pm.response.code).to.be.oneOf([200]); });" ] } }
+          ]
+        },
+        {
+          "name": "Listar clientes (paginado)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clientes?filtro=&page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","v1","clientes"],
+              "query": [
+                { "key": "filtro", "value": "" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test(\"status ok\", function () { pm.expect(pm.response.code).to.be.oneOf([200]); });" ] } }
+          ]
+        },
+        {
+          "name": "Actualizar contacto",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"juan.nuevo@correo.cl\",\n  \"telefono\": \"+56987654321\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/clientes/{{idCliente}}/contacto", "host": ["{{baseUrl}}"], "path": ["api","v1","clientes","{{idCliente}}","contacto"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test(\"status ok\", function () { pm.expect(pm.response.code).to.be.oneOf([200]); });" ] } }
+          ]
+        }
+      ]
+    }
+  ]
+}

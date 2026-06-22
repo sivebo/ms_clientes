@@ -37,7 +37,7 @@ public class ClienteController {
 
         private final ClienteService clienteService;
 
-        @Operation(summary = "Registrar un nuevo cliente", description = "RF-10: crea un cliente remitente o destinatario")
+        @Operation(summary = "Registrar un nuevo cliente", description = "crea un cliente remitente o destinatario")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "201", description = "Cliente creado exitosamente", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ClienteResponseDTO.class)))
         })
@@ -47,7 +47,7 @@ public class ClienteController {
                 return ResponseEntity.status(HttpStatus.CREATED).body(clienteService.create(dto));
         }
 
-        @Operation(summary = "Buscar cliente por tipo y número de documento", description = "RF-11: búsqueda exacta por tipoDocumento + nroDocumento")
+        @Operation(summary = "Buscar cliente por tipo y número de documento", description = "búsqueda exacta por tipoDocumento + nroDocumento")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "Cliente encontrado"),
                         @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
@@ -69,7 +69,7 @@ public class ClienteController {
                                 .orElse(ResponseEntity.notFound().build());
         }
 
-        @Operation(summary = "Listar clientes paginados", description = "RF-13: lista con paginación y filtro opcional por nombre o número de documento. Ej: ?filtro=Juan&page=0&size=10")
+        @Operation(summary = "Listar clientes paginados", description = "lista con paginación y filtro opcional por nombre o número de documento. Ej: ?filtro=Juan&page=0&size=10")
         @GetMapping
         public ResponseEntity<Page<ClienteResponseDTO>> listar(
                         @RequestParam(required = false) String filtro,
@@ -77,7 +77,7 @@ public class ClienteController {
                 return ResponseEntity.ok(clienteService.listar(filtro, pageable));
         }
 
-        @Operation(summary = "Actualizar datos de contacto", description = "RF-12: actualiza solo email y teléfono del cliente")
+        @Operation(summary = "Actualizar datos de contacto", description = "actualiza solo email y teléfono del cliente")
         @PutMapping("/{id}/contacto")
         public ResponseEntity<ClienteResponseDTO> actualizarContacto(
                         @PathVariable Long id,

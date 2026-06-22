@@ -27,7 +27,7 @@ class TipoDocumentoServiceTest {
     private static final TipoDocumento PASS = new TipoDocumento(2L, "PASS", "Pasaporte");
 
     @Test
-    void getAll_retornaTodosLosTipos() {
+    void getAllRetornaTodosLosTipos() {
         when(tipoDocumentoRepository.findAll()).thenReturn(List.of(RUT, PASS));
 
         List<TipoDocumentoResponseDTO> result = service.getAll();
@@ -38,14 +38,14 @@ class TipoDocumentoServiceTest {
     }
 
     @Test
-    void getAll_sinRegistros_retornaListaVacia() {
+    void getAllSinRegistrosRetornaListaVacia() {
         when(tipoDocumentoRepository.findAll()).thenReturn(List.of());
 
         assertTrue(service.getAll().isEmpty());
     }
 
     @Test
-    void getByCodigo_encontrado_retornaDTO() {
+    void getByCodigoEncontradoRetornaDTO() {
         when(tipoDocumentoRepository.findByCodigo("RUT")).thenReturn(Optional.of(RUT));
 
         Optional<TipoDocumentoResponseDTO> result = service.getByCodigo("RUT");
@@ -56,7 +56,7 @@ class TipoDocumentoServiceTest {
     }
 
     @Test
-    void getByCodigo_noExiste_retornaVacio() {
+    void getByCodigoNoExisteRetornaVacio() {
         when(tipoDocumentoRepository.findByCodigo("DNI")).thenReturn(Optional.empty());
 
         assertTrue(service.getByCodigo("DNI").isEmpty());

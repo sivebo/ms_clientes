@@ -35,17 +35,17 @@ class ClienteServiceTest {
 
     @InjectMocks ClienteService service;
 
-    private static final TipoDocumento TIPO_DOC = new TipoDocumento(1L, "RUT", "RUT chileno");
+    private static final TipoDocumento TIPODOC = new TipoDocumento(1L, "RUT", "RUT chileno");
     private static final Cliente CLIENTE = new Cliente(
-            1L, TIPO_DOC, "12345678-9", "Juan", "Perez", "juan@mail.com", "+56912345678");
+            1L, TIPODOC, "12345678-9", "Juan", "Perez", "juan@mail.com", "+56912345678");
 
     @Test
-    void create_documentoNuevo_guardaYRetornaDTO() {
+    void createDocumentoNuevoGuardaYRetornaDTO() {
         ClienteRequestDTO dto = new ClienteRequestDTO(
                 "RUT", "12345678-9", "Juan", "Perez", "juan@mail.com", "+56912345678");
 
         when(clienteRepository.existsByNroDocumento("12345678-9")).thenReturn(false);
-        when(tipoDocumentoRepository.findByCodigo("RUT")).thenReturn(Optional.of(TIPO_DOC));
+        when(tipoDocumentoRepository.findByCodigo("RUT")).thenReturn(Optional.of(TIPODOC));
         when(clienteRepository.save(any(Cliente.class))).thenReturn(CLIENTE);
 
         ClienteResponseDTO result = service.create(dto);
@@ -57,7 +57,7 @@ class ClienteServiceTest {
     }
 
     @Test
-    void create_documentoDuplicado_lanzaDuplicateResourceException() {
+    void createDocumentoDuplicadoLanzaDuplicateResourceException() {
         ClienteRequestDTO dto = new ClienteRequestDTO(
                 "RUT", "12345678-9", "Juan", "Perez", null, null);
 
@@ -68,7 +68,7 @@ class ClienteServiceTest {
     }
 
     @Test
-    void create_tipoDocumentoNoExiste_lanzaEntityNotFoundException() {
+    void createTipoDocumentoNoExisteLanzaEntityNotFoundException() {
         ClienteRequestDTO dto = new ClienteRequestDTO(
                 "PASS", "A12345678", "Juan", "Perez", null, null);
 
@@ -79,7 +79,7 @@ class ClienteServiceTest {
     }
 
     @Test
-    void getByTipoYNumeroDocumento_encontrado_retornaDTO() {
+    void getByTipoYNumeroDocumentoEncontradoRetornaDTO() {
         when(clienteRepository.findByTipoDocumentoCodigoAndNroDocumento("RUT", "12345678-9"))
                 .thenReturn(Optional.of(CLIENTE));
 
@@ -91,7 +91,7 @@ class ClienteServiceTest {
     }
 
     @Test
-    void getByTipoYNumeroDocumento_noExiste_retornaVacio() {
+    void getByTipoYNumeroDocumentoNoExisteRetornaVacio() {
         when(clienteRepository.findByTipoDocumentoCodigoAndNroDocumento("RUT", "99999999-9"))
                 .thenReturn(Optional.empty());
 
@@ -99,7 +99,7 @@ class ClienteServiceTest {
     }
 
     @Test
-    void getById_encontrado_retornaDTO() {
+    void getByIdEncontradoRetornaDTO() {
         when(clienteRepository.findById(1L)).thenReturn(Optional.of(CLIENTE));
 
         Optional<ClienteResponseDTO> result = service.getById(1L);
@@ -110,17 +110,17 @@ class ClienteServiceTest {
     }
 
     @Test
-    void getById_noExiste_retornaVacio() {
+    void getByIdNoExisteRetornaVacio() {
         when(clienteRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertTrue(service.getById(99L).isEmpty());
     }
 
     @Test
-    void actualizarContacto_encontrado_actualizaYRetornaDTO() {
-        Cliente clienteActual = new Cliente(1L, TIPO_DOC, "12345678-9", "Juan", "Perez", "old@mail.com", "111");
+    void actualizarContactoEncontradoActualizaYRetornaDTO() {
+        Cliente clienteActual = new Cliente(1L, TIPODOC, "12345678-9", "Juan", "Perez", "old@mail.com", "111");
         ClienteContactoUpdateDTO dto = new ClienteContactoUpdateDTO("new@mail.com", "+56999999999");
-        Cliente clienteActualizado = new Cliente(1L, TIPO_DOC, "12345678-9", "Juan", "Perez", "new@mail.com", "+56999999999");
+        Cliente clienteActualizado = new Cliente(1L, TIPODOC, "12345678-9", "Juan", "Perez", "new@mail.com", "+56999999999");
 
         when(clienteRepository.findById(1L)).thenReturn(Optional.of(clienteActual));
         when(clienteRepository.save(any(Cliente.class))).thenReturn(clienteActualizado);
@@ -134,7 +134,7 @@ class ClienteServiceTest {
     }
 
     @Test
-    void actualizarContacto_noExiste_retornaVacio() {
+    void actualizarContactoNoExisteRetornaVacio() {
         when(clienteRepository.findById(99L)).thenReturn(Optional.empty());
 
         Optional<ClienteResponseDTO> result = service.actualizarContacto(99L, new ClienteContactoUpdateDTO());
@@ -144,7 +144,7 @@ class ClienteServiceTest {
     }
 
     @Test
-    void listar_sinFiltro_usaFindAllPaginado() {
+    void listarSinFiltroUsaFindAllPaginado() {
         Pageable pageable = PageRequest.of(0, 10);
         when(clienteRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(CLIENTE)));
 
@@ -157,7 +157,7 @@ class ClienteServiceTest {
     }
 
     @Test
-    void listar_conFiltro_buscaPorNombreODocumento() {
+    void listarConFiltroBuscaPorNombreODocumento() {
         Pageable pageable = PageRequest.of(0, 10);
         when(clienteRepository.findByNombreContainingIgnoreCaseOrNroDocumentoContainingIgnoreCase(
                 "Juan", "Juan", pageable)).thenReturn(new PageImpl<>(List.of(CLIENTE)));
@@ -170,7 +170,7 @@ class ClienteServiceTest {
     }
 
     @Test
-    void listar_filtroBlanco_usaFindAllPaginado() {
+    void listarFiltroBlancoUsaFindAllPaginado() {
         Pageable pageable = PageRequest.of(0, 10);
         when(clienteRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(CLIENTE)));
 

@@ -28,7 +28,6 @@ public class ClienteService extends MapToDTO {
         private final ClienteRepository clienteRepository;
         private final TipoDocumentoRepository tipoDocumentoRepository;
 
-        // RF-10: registrar cliente remitente/destinatario
         public ClienteResponseDTO create(ClienteRequestDTO dto) {
                 if (clienteRepository.existsByNroDocumento(dto.getNroDocumento())) {
                         throw new DuplicateResourceException(
@@ -52,7 +51,6 @@ public class ClienteService extends MapToDTO {
                 return mapClienteToDTO(clienteRepository.save(cliente));
         }
 
-        // RF-11: buscar cliente existente por tipo y número de documento
         public Optional<ClienteResponseDTO> getByTipoYNumeroDocumento(String codigoTipoDoc, String nroDocumento) {
                 log.info(">>> Buscando cliente por tipoDocumento={}, nroDocumento={}", codigoTipoDoc, nroDocumento);
                 return clienteRepository
@@ -64,7 +62,6 @@ public class ClienteService extends MapToDTO {
                 return clienteRepository.findById(id).map(this::mapClienteToDTO);
         }
 
-        // RF-12: actualizar datos de contacto (email, telefono)
         public Optional<ClienteResponseDTO> actualizarContacto(Long id, ClienteContactoUpdateDTO dto) {
                 return clienteRepository.findById(id).map(cliente -> {
                         cliente.setEmail(dto.getEmail());
@@ -74,7 +71,6 @@ public class ClienteService extends MapToDTO {
                 });
         }
 
-        // RF-13: listar clientes con paginación y filtro por nombre o numero de documento
         public Page<ClienteResponseDTO> listar(String filtro, Pageable pageable) {
                 Page<Cliente> page = (filtro != null && !filtro.isBlank())
                                 ? clienteRepository.findByNombreContainingIgnoreCaseOrNroDocumentoContainingIgnoreCase(
